@@ -1,0 +1,36 @@
+{
+    "name": "faqs",
+    "base": "PersistedModel",
+    "idInjection": true,
+    "options": {
+        "validateUpsert": true
+    },
+    "properties": {
+        "category": {
+            "type": "string"
+        },
+        "description": {
+            "type": "string"
+        },
+        "m_id": {
+            "type": "string"
+        },
+        "status": {
+            "type": "Boolean",
+            "default": false
+        },
+        "created": {
+            "type": "date"
+        }
+    },
+    "validations": [],
+    "relations": {
+        "members": {
+            "type": "belongsTo",
+            "model": "members",
+            "foreignKey": "m_id"
+        }
+    },
+    "acls": [],
+    "methods": {}
+}

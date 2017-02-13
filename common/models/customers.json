@@ -1,0 +1,29 @@
+{
+  "name": "customers",
+  "base": "PersistedModel",
+  "idInjection": true,
+  "options": {
+    "validateUpsert": true
+  },
+  "properties": {
+    "cust_name": {
+      "type": "string"
+    },
+    "cust_contact": {
+      "type": "string"
+    },
+    "cust_email": {
+      "type": "string"
+    }
+  },
+  "validations": [],
+  "relations": {
+    "coupons": {
+      "type": "hasMany",
+      "model": "coupons",
+      "foreignKey": "cust_id"
+    }
+  },
+  "acls": [],
+  "methods": {}
+}

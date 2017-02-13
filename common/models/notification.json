@@ -1,0 +1,36 @@
+{
+  "name": "notifications",
+  "base": "PersistedModel",
+  "idInjection": true,
+  "options": {
+    "validateUpsert": true
+  },
+  "properties": {
+    "m_id": {
+      "type": "string"
+    },
+    "n_time_created": {
+      "type": "date"
+    },
+    "n_time_updated": {
+      "type": "date"
+    },
+    "n_data": {
+      "type": "object"
+    },
+    "n_read": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "validations": [],
+  "relations": {
+    "members": {
+      "type": "belongsTo",
+      "model": "members",
+      "foreignKey": "m_id"
+    }
+  },
+  "acls": [],
+  "methods": {}
+}

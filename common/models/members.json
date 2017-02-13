@@ -1,0 +1,128 @@
+{
+  "name": "members",
+  "base": "User",
+  "idInjection": true,
+  "options": {
+    "validateUpsert": true
+  },
+  "properties": {
+    "m_device": {
+      "type": "string"
+    },
+    "m_token_firebase": {
+      "type": "string"
+    },
+    "resetPasswordToken": {
+      "type": "string"
+    },
+    "resetPasswordExpires": {
+      "type": "string"
+    },
+    "created": {
+      "type": "date"
+    },
+    "last_payment": {
+      "type": "date"
+    },
+    "business_name": {
+      "type": "string"
+    },
+    "business_logo": {
+      "type": "string"
+    },
+    "business_type": {
+      "type": "string"
+    },
+    "contact": {
+      "type": "string"
+    },
+    "contact_person": {
+      "type": "string"
+    },
+    "business_address": {
+      "type": "string"
+    },
+    "business_address_opt": {
+      "type": "string"
+    },
+    "city": {
+      "type": "string"
+    },
+    "state": {
+      "type": "string"
+    },
+    "zip_code": {
+      "type": "number"
+    },
+    "business_logo": {
+      "type": "string"
+    },
+    "web_address": {
+      "type": "string"
+    },
+    "work_through": {
+      "type": "string"
+    }
+  },
+  "validations": [],
+  "relations": {
+    "campaigns": {
+      "type": "hasMany",
+      "model": "campaigns",
+      "foreignKey": "m_id"
+    },
+    "customers": {
+      "type": "hasMany",
+      "model": "customers",
+      "foreignKey": "m_id"
+    },
+    "payments": {
+      "type": "hasMany",
+      "model": "payments",
+      "foreignKey": "m_id"
+    }
+  },
+  "acls": [{
+    "accessType": "EXECUTE",
+    "principalType": "ROLE",
+    "principalId": "$everyone",
+    "permission": "ALLOW",
+    "property": "check_email"
+  }, {
+    "accessType": "EXECUTE",
+    "principalType": "ROLE",
+    "principalId": "$everyone",
+    "permission": "ALLOW",
+    "property": "test"
+  }, {
+    "accessType": "*",
+    "principalType": "ROLE",
+    "principalId": "$authenticated",
+    "permission": "ALLOW"
+  }, {
+    "accessType": "EXECUTE",
+    "principalType": "ROLE",
+    "principalId": "$everyone",
+    "permission": "ALLOW",
+    "property": "sign_universal"
+  }, {
+    "accessType": "EXECUTE",
+    "principalType": "ROLE",
+    "principalId": "$everyone",
+    "permission": "ALLOW",
+    "property": "send_reset_password_link"
+  }, {
+    "accessType": "EXECUTE",
+    "principalType": "ROLE",
+    "principalId": "$everyone",
+    "permission": "ALLOW",
+    "property": "reset_password"
+  }, {
+    "accessType": "EXECUTE",
+    "principalType": "ROLE",
+    "principalId": "$everyone",
+    "permission": "ALLOW",
+    "property": "send_reset_password_link"
+  }],
+  "methods": {}
+}

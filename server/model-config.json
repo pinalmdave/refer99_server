@@ -1,0 +1,67 @@
+{
+  "_meta": {
+    "sources": [
+      "loopback/common/models",
+      "loopback/server/models",
+      "../common/models",
+      "./models"
+    ],
+    "mixins": [
+      "loopback/common/mixins",
+      "loopback/server/mixins",
+      "../common/mixins",
+      "./mixins"
+    ]
+  },
+  "User": {
+    "dataSource": "db"
+  },
+  "AccessToken": {
+    "dataSource": "db",
+    "public": false
+  },
+  "ACL": {
+    "dataSource": "db",
+    "public": false
+  },
+  "RoleMapping": {
+    "dataSource": "db",
+    "public": false
+  },
+  "Role": {
+    "dataSource": "db",
+    "public": false
+  },
+  "members": {
+    "dataSource": "db",
+    "public": true
+  },
+  "campaigns": {
+    "dataSource": "db",
+    "public": true
+  },
+  "coupons": {
+    "dataSource": "db",
+    "public": true
+  },
+  "customers": {
+    "dataSource": "db",
+    "public": true
+  },
+  "container": {
+    "dataSource": "storage",
+    "public": true
+  },
+  "payments": {
+    "dataSource": "db",
+    "public": true
+  },
+  "notifications": {
+    "dataSource": "db",
+    "public": true
+  },
+  "faqs": {
+    "dataSource": "db",
+    "public": true
+  }
+}

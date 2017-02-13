@@ -1,0 +1,33 @@
+{
+  "name": "payments",
+  "base": "PersistedModel",
+  "idInjection": true,
+  "options": {
+    "validateUpsert": true
+  },
+  "properties": {
+    "type": {
+      "type": "string"
+    },
+    "provider": {
+      "type": "string"
+    },
+    "details": {
+      "type": "object",
+      "default":{}
+    },
+    "created": {
+      "type": "date"
+    }
+  },
+  "validations": [],
+  "relations": {
+    "members": {
+      "type": "belongsTo",
+      "model": "members",
+      "foreignKey": "m_id"
+    }
+  },
+  "acls": [],
+  "methods": {}
+}

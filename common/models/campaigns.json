@@ -1,0 +1,100 @@
+{
+  "name": "campaigns",
+  "base": "PersistedModel",
+  "idInjection": true,
+  "options": {
+    "validateUpsert": true
+  },
+  "properties": {
+    "cp_name": {
+      "type": "string",
+      "required": true
+    },
+    "start_date": {
+      "type": "date",
+      "required": true
+    },
+    "end_date": {
+      "type": "date",
+      "required": true
+    },
+    "business_name": {
+      "type": "string",
+      "required": true
+    },
+    "business_type": {
+      "type": "string",
+      "required": true
+    },
+    "business_address": {
+      "type": "string"
+    },
+    "cp_terms": {
+      "type": "string"
+    },
+    "cp_offer": {
+      "type": "string"
+    },
+    "cp_email": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "default": "N/A"
+    },
+    "contact": {
+      "type": "string"
+    },
+    "contact_person": {
+      "type": "string"
+    },
+    "city": {
+      "type": "string"
+    },
+    "state": {
+      "type": "string"
+    },
+    "zip_code": {
+      "type": "number"
+    },
+    "max_coupons": {
+      "type": "number"
+    },
+    "created": {
+      "type": "date"
+    },
+    "redeemable_at": {
+      "type": "string"
+    },
+    "web_address": {
+      "type": "string"
+    },
+    "buy_value": {
+      "type": "string"
+    },
+    "get_value": {
+      "type": "string"
+    }
+  },
+  "validations": [],
+  "relations": {
+    "coupons": {
+      "type": "hasMany",
+      "model": "coupons",
+      "foreignKey": "cp_id"
+    },
+    "members": {
+      "type": "belongsTo",
+      "model": "members",
+      "foreignKey": "m_id"
+    }
+  },
+  "acls": [{
+    "accessType": "EXECUTE",
+    "principalType": "ROLE",
+    "principalId": "$everyone",
+    "permission": "ALLOW",
+    "property": "find"
+  }],
+  "methods": {}
+}

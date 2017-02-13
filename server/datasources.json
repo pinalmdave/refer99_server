@@ -1,0 +1,18 @@
+{
+  "db": {
+    "url": "mongodb://localhost/viralDi",
+    "password": "",
+    "name": "db",
+    "connector": "mongodb",
+    "user": "",
+    "allowExtendedOperators": true
+  },
+  "storage": {
+    "password": "osvin@123456",
+    "name": "storage",
+    "connector": "loopback-component-storage",
+    "provider": "filesystem",
+    "root": "./client/storage",
+    "user": "osvin315@gmail.com"
+  }
+}
