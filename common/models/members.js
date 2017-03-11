@@ -9,7 +9,7 @@ module.exports = function(Members) {
     //delete Members.validations.email; //delete MyModel.app.models.User.validations.email;
     delete Members.validations.username; //delete MyModel.app.models.User.validations.username;
   });
-  Members.sign_universal = function(username, email, password, cb) {
+  Members.sign_universal = function(username, email, password,origin,a_code, cb) {
 
     if (!email || email == '') {
       return cb("invalid request.");
@@ -22,6 +22,7 @@ module.exports = function(Members) {
       "username": username,
       "email": email,
       "password": password,
+      "origin": origin,
       "created": new Date()
     };
 
@@ -62,6 +63,12 @@ module.exports = function(Members) {
         type: 'string'
       }, {
         arg: 'password',
+        type: 'string'
+      },{
+        arg: 'origin',
+        type: 'string'
+      },{
+        arg: 'a_code',
         type: 'string'
       }],
       returns: {

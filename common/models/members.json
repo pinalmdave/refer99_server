@@ -21,8 +21,18 @@
     "created": {
       "type": "date"
     },
+    "origin": {
+      "type": "string"
+    },
+    "camp_trial": {
+      "type": "boolean",
+      "default": false
+    },
     "last_payment": {
       "type": "date"
+    },
+    "m_type": {
+      "type": "string"
     },
     "business_name": {
       "type": "string"

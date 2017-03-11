@@ -16,6 +16,25 @@
     },
     "c_info": {
       "type": "string"
+    },
+    "refer_id": {
+      "type": "string"
+    },
+    "referrer_id": {
+      "type": "string"
+    },
+    "email": {
+      "type": "string"
+    },
+    "contact": {
+      "type": "string"
+    },
+    "add_discount": {
+      "type": "boolean",
+      "default": false
+    },
+    "created": {
+      "type": "date"
     }
   },
   "validations": [],
@@ -24,6 +43,11 @@
       "type": "belongsTo",
       "model": "customers",
       "foreignKey": "cust_id"
+    },
+    "members": {
+      "type": "belongsTo",
+      "model": "members",
+      "foreignKey": "m_id"
     }
   },
   "acls": [{
@@ -44,13 +68,13 @@
     "principalId": "$everyone",
     "permission": "ALLOW",
     "property": "create_active_coupon"
-  },{
+  }, {
     "accessType": "EXECUTE",
     "principalType": "ROLE",
     "principalId": "$everyone",
     "permission": "ALLOW",
     "property": "send_coupon_as_sms"
-  },{
+  }, {
     "accessType": "EXECUTE",
     "principalType": "ROLE",
     "principalId": "$everyone",

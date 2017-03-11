@@ -1,0 +1,42 @@
+{
+  "name": "plans",
+  "base": "PersistedModel",
+  "idInjection": true,
+  "options": {
+    "validateUpsert": true
+  },
+  "properties": {
+    "p_name": {
+      "type": "string"
+    },
+    "p_value": {
+      "type": "string"
+    },
+    "currency": {
+      "type": "string"
+    },
+    "amount": {
+      "type": "number"
+    },
+    "features": {
+      "type": "array"
+    },
+    "coupons_count": {
+      "type": "number"
+    },
+    "recurrence": {
+      "type": "string"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true
+    },
+    "created": {
+      "type": "date"
+    }
+  },
+  "validations": [],
+  "relations": {},
+  "acls": [],
+  "methods": {}
+}

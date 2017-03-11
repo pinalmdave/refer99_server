@@ -63,5 +63,13 @@
   "faqs": {
     "dataSource": "db",
     "public": true
+  },
+  "agents": {
+    "dataSource": "db",
+    "public": true
+  },
+   "plans": {
+    "dataSource": "db",
+    "public": true
   }
 }

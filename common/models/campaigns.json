@@ -42,6 +42,17 @@
       "type": "string",
       "default": "N/A"
     },
+    "cp_share": {
+      "type": "boolean",
+      "default": false
+    },
+    "add_discount": {
+      "type": "boolean",
+      "default": false
+    },
+    "add_discount_value": {
+      "type": "string"
+    },
     "contact": {
       "type": "string"
     },

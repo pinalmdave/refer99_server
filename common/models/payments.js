@@ -20,7 +20,8 @@ module.exports = function(Payments) {
     Members.update({
       id: instance.m_id
     }, {
-      last_payment: instance.created
+      last_payment: instance.created,
+      m_type: instance.type
     }, function(err, info) {
       if (err) {
         return next(err);
