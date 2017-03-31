@@ -29,6 +29,9 @@
     "business_address": {
       "type": "string"
     },
+    "business_address_opt": {
+      "type": "string"
+    },
     "cp_terms": {
       "type": "string"
     },

@@ -44,6 +44,11 @@
       "model": "customers",
       "foreignKey": "cust_id"
     },
+    "campaigns": {
+      "type": "belongsTo",
+      "model": "campaigns",
+      "foreignKey": "cp_id"
+    },
     "members": {
       "type": "belongsTo",
       "model": "members",

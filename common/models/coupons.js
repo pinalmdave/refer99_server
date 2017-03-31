@@ -5,7 +5,11 @@ var moment = require('moment-timezone');
 var moment_time = require('moment');
 var emoji = require('node-emoji');
 var nodemailer = require('nodemailer');
-var client = require('twilio')('AC871ec7d4595e86fc80563a76671c6349', '6845b64800e3dc910db20c2c66aff215');
+var handlebars = require('handlebars');
+var fs = require('fs')
+  // var client = require('twilio')('AC871ec7d4595e86fc80563a76671c6349', '6845b64800e3dc910db20c2c66aff215');
+var twilio = require('twilio');
+var client = new twilio.RestClient('AC871ec7d4595e86fc80563a76671c6349', '6845b64800e3dc910db20c2c66aff215');
 module.exports = function(Coupons) {
 
   Coupons.observe('before save', function(ctx, next) {
@@ -22,69 +26,7 @@ module.exports = function(Coupons) {
     if (ctx.isNewInstance) {
       var Payment = Coupons.app.models.Payments;
       var Plan = Coupons.app.models.Plans;
-      async.waterfall([
-        function(callback) {
-          Payment.findOne({
-            where: {
-              m_id: instance.m_id
-            },
-            order: "created desc"
-          }, function(err, payment) {
-            if (err) {
-              return callback(err);
-            }
-            if (_.isEmpty(Payment)) {
-              return callback({ message: "Payment not found" }, null);
-            }
-            callback(null, payment);
-          });
-        },
-        function(payment, callback) {
-          // arg1 now equals 'one' and arg2 now equals 'two'
-          Plan.findOne({
-            where: {
-              p_name: payment.type
-            }
-          }, function(err, plan) {
-            if (err) {
-              return callback(err);
-            }
-            if (_.isEmpty(plan)) {
-              return callback({ message: "plan not found" }, null);
-            }
-            plan.payment = payment;
-            callback(null, plan);
-          });
-        },
-        function(plan, callback) {
-          // arg1 now equals 'three'
-          var mon_diff = moment_time().diff(moment_time(plan.payment.created), "months");
-          // console.log('mon_diff',mon_diff);
-          var g_month = moment(plan.payment.created).add(mon_diff, 'M');
-          // console.log('g_month',g_month);
-          var l_month = moment(g_month).add(1, 'M');
-          // console.log('l_month',l_month);
-          Coupons.count({ m_id: instance.m_id, $and: [{ created: { $gt: new Date(g_month) } }, { created: { $lt: new Date(l_month) } }] }, function(err, count) {
-            if (err) {
-              return callback(err);
-            }
-            if (count > plan.coupons_count) {
-              var data = {
-                plan_coupons_count: plan.coupons_count,
-                coupons_generated: count,
-                can_execute: false
-              };
-            } else {
-              var data = {
-                plan_coupons_count: plan.coupons_count,
-                coupons_generated: count,
-                can_execute: true
-              };
-            }
-            callback(null, data);
-          });
-        }
-      ], function(err, result) {
+      Coupons.check_max_coupons(instance.m_id, function(err, result) {
         // result now equals 'done' 
         if (err) {
           // console.log('err', err);
@@ -273,6 +215,17 @@ module.exports = function(Coupons) {
       }
     }
   );
+
+  var readHTMLFile = function(path, callback) {
+    fs.readFile(path, { encoding: 'utf-8' }, function(err, html) {
+      if (err) {
+        throw err;
+        callback(err);
+      } else {
+        callback(null, html);
+      }
+    });
+  };
   var send_sms = function(mobile_no, msg, cb) {
     var Campaign = Coupons.app.models.Campaigns;
     if (!mobile_no) {
@@ -286,11 +239,10 @@ module.exports = function(Coupons) {
       }, null);
     }
     var message = msg;
-    client.sendMessage({
+    client.messages.create({
       to: mobile_no, // Any number Twilio can deliver to
       from: '+14259709912', // A number you bought from Twilio and can use for outbound communication
       body: message // body of the SMS message
-
     }, function(err, responseData) { //this function is executed when a response is received from Twilio
 
       if (err) { // "err" is an error received during the request, if any
@@ -301,7 +253,7 @@ module.exports = function(Coupons) {
       }
     });
   };
-  var send_email = function(subject, email, msg, cb) {
+  var send_email = function(subject, email, emailObj, cb) {
     var Campaign = Coupons.app.models.Campaigns;
     if (!subject) {
       return cb({
@@ -313,35 +265,43 @@ module.exports = function(Coupons) {
         message: "Invalid email address!"
       }, null);
     }
-    if (!msg) {
+    if (!emailObj) {
       return cb({
         message: "Invalid message!"
       }, null);
     }
-    var message = msg;
-    var smtpTransport = nodemailer.createTransport('SMTP', {
-      service: 'gmail',
-      auth: {
-        user: 'osvinandroid@gmail.com',
-        pass: 'osvin@40'
-      }
-    });
-    var mailOptions = {
-      to: email,
-      from: 'osvinandroid@gmail.com',
-      subject: subject,
-      text: message
-    };
-    smtpTransport.sendMail(mailOptions, function(err, response) {
+    // var message = msg;
+    readHTMLFile(__dirname + "/../mail/" + emailObj.shareType + ".html", function(err, html) {
       if (err) {
-        console.log('err', err);
         return cb(err, null);
-      } else {
-        // console.log('response', response);
-        return cb(null, {
-          "message": "success"
-        });
       }
+      var template = handlebars.compile(html);
+      var replacements = emailObj;
+      var htmlToSend = template(replacements);
+      var smtpTransport = nodemailer.createTransport('SMTP', {
+        service: 'gmail',
+        auth: {
+          user: 'contact@viral99.com',
+          pass: 'contact@viral99'
+        }
+      });
+      var mailOptions = {
+        to: email,
+        from: 'contact@viral99.com',
+        subject: subject,
+        html: htmlToSend
+      };
+      smtpTransport.sendMail(mailOptions, function(err, response) {
+        if (err) {
+          console.log('err', err);
+          return cb(err, null);
+        } else {
+          // console.log('response', response);
+          return cb(null, {
+            "message": "success"
+          });
+        }
+      });
     });
   };
   Coupons.process_coupon_generate = function(cp_id, referrer_id, email, contact, cb) {
@@ -423,7 +383,7 @@ module.exports = function(Coupons) {
                       return callback(err, null);
                     }
                     // console.log('obj_member',obj_member);
-                    var title = "refer99";
+                    var title = obj_camp.cp_name;
                     var alert = "Coupon generated with code: " + coupon.c_code;
                     var payload = {
                       'type': 'coupon',
@@ -463,22 +423,42 @@ module.exports = function(Coupons) {
                       if (err) {
                         return callback(err, null);
                       } else {
-                        var message = "Your coupon code " + obj_coupon.c_code + " is activated now.Please visit ";
+                        var email_obj = {};
+                        email_obj.shareType = "coupon";
+                        var message = "Congratulations! Your coupon is activated now.\n";
+                        message += (obj_camp.business_name) + " : " + (obj_camp.cp_offer) + "\n";
+                        message += "Coupon code : " + obj_coupon.c_code + "\n";
+                        message += "Status : activated \n";
+                        message += "Addl discount : " + (obj_camp.add_discount ? obj_camp.add_discount_value : "None") + "\n";
+                        message += "Validity : " + (moment_time(moment_time(obj_camp.start_date).add(1,"days")).format('LL')) + " To " + (moment_time(moment_time(obj_camp.end_date).add(1,"days")).format('LL')) + "\n";
+                        email_obj.message = "Congratulations! Your coupon code is activated now."
                         if (obj_camp.redeemable_at == "online") {
-                          message += obj_camp.web_address;
+                          // message += obj_camp.web_address;
+                          email_obj.address = obj_camp.web_address;
+                          email_obj.address_opt = "";
                         } else {
-                          message += obj_camp.business_address + ", " + (obj_camp.city ? obj_camp.city : "") + ", " + (obj_camp.state ? obj_camp.state : "") + ", " + (obj_camp.zip_code ? obj_camp.zip_code : "");
+                          email_obj.address = obj_camp.business_address + " " + (obj_camp.city ? obj_camp.city : "") + " " + (obj_camp.state ? obj_camp.state : "") + " " + (obj_camp.zip_code ? obj_camp.zip_code : "");
+                          email_obj.address_opt = obj_camp.business_address_opt?obj_camp.business_address_opt:"";
+                          // message += email_obj.address;
                         }
-                        message += " to redeem it.";
+                        email_obj.business_name = obj_camp.business_name;
+                        email_obj.offer = obj_camp.cp_offer;
+                        email_obj.terms = obj_camp.cp_terms;
+                        email_obj.c_code = obj_coupon.c_code;
+                        email_obj.status = "activated";
+                        email_obj.add_discount = "None";
+                        email_obj.validTill = (moment_time(moment_time(obj_camp.start_date).add(1,"days")).format('LL')) + " To " + (moment_time(moment_time(obj_camp.end_date).add(1,"days")).format('LL'));
+
+                        // message += " to redeem it.";
                         var subject = "Exclusive offer from " + (obj_camp.business_name) + ", " + obj_camp.cp_offer;
                         if (obj_coupon.email && obj_coupon.contact) {
                           send_sms(obj_coupon.contact, message, function(err, res) {
-                            send_email(subject, obj_coupon.email, message, function(err, res) {
+                            send_email(subject, obj_coupon.email, email_obj, function(err, res) {
                               callback(null, 'referrer');
                             });
                           });
                         } else if (obj_coupon.email) {
-                          send_email(subject, obj_coupon.email, message, function(err, res) {
+                          send_email(subject, obj_coupon.email, email_obj, function(err, res) {
                             callback(null, 'referrer');
                           });
                         } else if (obj_coupon.contact) {
@@ -497,31 +477,58 @@ module.exports = function(Coupons) {
               },
               function(callback) {
                 //send message or email to customer
-                var link = "http://refer99.com/admin/#/app/" + coupon.cp_id + "/" + coupon.refer_id + "/coupon_share";
-                var message = "";
+                var email_obj = {};
+                var link = "http://refer99.com/admin/#/app/process/" + coupon.id + "/coupon_process";
+                email_obj.link = link;
+                var message = (obj_camp.business_name) + " : " + (obj_camp.cp_offer) + "\n";
+                message += "Coupon code : " + coupon.c_code + "\n";
+                message += "Status : " + coupon.status + "\n";
+                message += "Addl discount : " + (obj_camp.add_discount ? obj_camp.add_discount_value : "None") + "\n";
+                message += "Validity : " + (moment_time(moment_time(obj_camp.start_date).add(1,"days")).format('LL')) + " To " + (moment_time(moment_time(obj_camp.end_date).add(1,"days")).format('LL')) + "\n";
                 if (obj_camp.cp_share) {
-                  message += "Your coupon code is " + coupon.c_code + ".Please share the link " + link + " with your friends and family to activate this coupon and then visit ";
+                  message += "Please share the link with your friend or family to activate this coupon.\n";
+                  message += link;
+                  email_obj.shareType = "coupon_with_share";
+                  email_obj.shareMsg = "Activate your coupon by sharing link with your friend or family."
                 } else {
-                  message += "Your coupon code is" + coupon.c_code + ".Coupon is Activated and ready to be used.Please visit";
+                  // message += "Your coupon code is " + coupon.c_code + ".Coupon is Activated and ready to be used.";
+                  email_obj.shareType = "coupon";
                 }
                 if (obj_camp.redeemable_at == "online") {
-                  message += obj_camp.web_address;
+                  // message += obj_camp.web_address;
+                  email_obj.address = obj_camp.web_address;
+                  email_obj.address_opt = "";
                 } else {
-                  message += obj_camp.business_address + ", " + (obj_camp.city ? obj_camp.city : "") + ", " + (obj_camp.state ? obj_camp.state : "") + ", " + (obj_camp.zip_code ? obj_camp.zip_code : "");
+                  email_obj.address = obj_camp.business_address + " " + (obj_camp.city ? obj_camp.city : "") + " " + (obj_camp.state ? obj_camp.state : "") + " " + (obj_camp.zip_code ? obj_camp.zip_code : "");
+                  email_obj.address_opt = obj_camp.business_address_opt?obj_camp.business_address_opt:"";
+                  // message += email_obj.address;
                 }
-                message += " to redeem it.";
+                // message += " to redeem it.";
                 if (obj_camp.add_discount) {
-                  message += " share the link " + link + " with friends and family and get additional discount of " + obj_camp.add_discount_value;
+                  message += " share the link with friend or family and get additional discount of " + obj_camp.add_discount_value + ".\n";
+                  message += link;
+                  email_obj.shareType = "coupon_with_share";
+                  email_obj.add_discount = obj_camp.add_discount_value;
+                  email_obj.shareMsg = "Want more discounts? Share your coupon link with friend or family and get " + obj_camp.add_discount_value + " additional discount."
+                } else {
+                  email_obj.add_discount = "None";
                 }
+                email_obj.business_name = obj_camp.business_name;
+                email_obj.offer = obj_camp.cp_offer;
+                email_obj.terms = obj_camp.cp_terms;
+                email_obj.c_code = coupon.c_code;
+                email_obj.status = coupon.status;
+                email_obj.validTill = (moment_time(moment_time(obj_camp.start_date).add(1,"days")).format('LL')) + " To " + (moment_time(moment_time(obj_camp.end_date).add(1,"days")).format('LL'));
+                email_obj.message = "Please check your coupon details.";
                 var subject = "Exclusive offer from " + (obj_camp.business_name) + ", " + obj_camp.cp_offer;
                 if (coupon.email && coupon.contact) {
                   send_sms(coupon.contact, message, function(err, res) {
-                    send_email(subject,coupon.email, message, function(err, res) {
+                    send_email(subject, coupon.email, email_obj, function(err, res) {
                       callback(null, 'send coupon');
                     });
                   });
                 } else if (coupon.email) {
-                  send_email(subject,coupon.email, message, function(err, res) {
+                  send_email(subject, coupon.email, email_obj, function(err, res) {
                     callback(null, 'send coupon');
                   });
                 } else if (coupon.contact) {
@@ -555,22 +562,41 @@ module.exports = function(Coupons) {
                       if (err) {
                         return callback(err, null);
                       } else {
-                        var message = "Congratulations! You just got additional " + obj_camp.add_discount_value + " discount by sharing coupon with your friend.Coupon code is " + obj_coupon.c_code + ".Please visit "
+                        var email_obj = {};
+                        email_obj.shareType = "coupon";
+                        var message = "Congratulations! You just got additional " + obj_camp.add_discount_value + " discount by sharing coupon with your friend.\n"
+                        message += (obj_camp.business_name) + " : " + (obj_camp.cp_offer) + "\n";
+                        message += "Coupon code : " + obj_coupon.c_code + "\n";
+                        message += "Status : activated \n";
+                        message += "Addl discount : " + (obj_camp.add_discount ? obj_camp.add_discount_value : "None") + "\n";
+                        message += "Validity : " + (moment_time(moment_time(obj_camp.start_date).add(1,"days")).format('LL')) + " To " + (moment_time(moment_time(obj_camp.end_date).add(1,"days")).format('LL')) + "\n";
+                        email_obj.message = "Congratulation, you received " + obj_camp.add_discount_value + " additional discount by sharing your coupon with your friend(s). Please find details as below.";
                         if (obj_camp.redeemable_at == "online") {
-                          message += obj_camp.web_address;
+                          // message += obj_camp.web_address;
+                          email_obj.address = obj_camp.web_address;
+                          email_obj.address_opt = "";
                         } else {
-                          message += obj_camp.business_address + ", " + (obj_camp.city ? obj_camp.city : "") + ", " + (obj_camp.state ? obj_camp.state : "") + ", " + (obj_camp.zip_code ? obj_camp.zip_code : "");
+                          email_obj.address = obj_camp.business_address + " " + (obj_camp.city ? obj_camp.city : "") + " " + (obj_camp.state ? obj_camp.state : "") + " " + (obj_camp.zip_code ? obj_camp.zip_code : "");
+                          email_obj.address_opt = obj_camp.business_address_opt?obj_camp.business_address_opt:"";
+                          // message += email_obj.address;
                         }
-                        message += " to get it.";
+                        email_obj.business_name = obj_camp.business_name;
+                        email_obj.offer = obj_camp.cp_offer;
+                        email_obj.terms = obj_camp.cp_terms;
+                        email_obj.c_code = obj_coupon.c_code;
+                        email_obj.status = "activated";
+                        email_obj.add_discount = obj_camp.add_discount_value;
+                        email_obj.validTill = (moment_time(moment_time(obj_camp.start_date).add(1,"days")).format('LL')) + " To " + (moment_time(moment_time(obj_camp.end_date).add(1,"days")).format('LL'));
+                        // message += " to get it.";
                         var subject = "Exclusive offer from " + (obj_camp.business_name) + ", " + obj_camp.cp_offer;
                         if (obj_coupon.email && obj_coupon.contact) {
                           send_sms(obj_coupon.contact, message, function(err, res) {
-                            send_email(subject,obj_coupon.email, message, function(err, res) {
+                            send_email(subject, obj_coupon.email, email_obj, function(err, res) {
                               callback(null, 'additional');
                             });
                           });
                         } else if (obj_coupon.email) {
-                          send_email(subject,obj_coupon.email, message, function(err, res) {
+                          send_email(subject, obj_coupon.email, email_obj, function(err, res) {
                             callback(null, 'additional');
                           });
                         } else if (obj_coupon.contact) {
@@ -644,11 +670,10 @@ module.exports = function(Coupons) {
       }, null);
     }
     var message = "Hi, Your refer99 coupon code is: " + c_code;
-    client.sendMessage({
+    client.messages.create({
       to: mobile_no, // Any number Twilio can deliver to
       from: '+14259709912', // A number you bought from Twilio and can use for outbound communication
       body: message // body of the SMS message
-
     }, function(err, responseData) { //this function is executed when a response is received from Twilio
 
       if (err) { // "err" is an error received during the request, if any
@@ -694,13 +719,13 @@ module.exports = function(Coupons) {
     var smtpTransport = nodemailer.createTransport('SMTP', {
       service: 'gmail',
       auth: {
-        user: 'osvinandroid@gmail.com',
-        pass: 'osvin@40'
+        user: 'contact@viral99.com',
+        pass: 'contact@viral99'
       }
     });
     var mailOptions = {
       to: email,
-      from: 'osvinandroid@gmail.com',
+      from: 'contact@viral99.com',
       subject: 'refer99 Coupon Code',
       text: message
     };
@@ -955,5 +980,80 @@ module.exports = function(Coupons) {
       }
     }
   );
+  Coupons.check_max_coupons = function(m_id, cb) {
+    var Payment = Coupons.app.models.Payments;
+    var Plan = Coupons.app.models.Plans;
+    async.waterfall([
+      function(callback) {
+        Payment.findOne({
+          where: {
+            m_id: m_id
+          },
+          order: "created desc"
+        }, function(err, payment) {
+          if (err) {
+            return callback(err);
+          }
+          if (_.isEmpty(Payment)) {
+            return callback({ message: "Payment not found" }, null);
+          }
+          callback(null, payment);
+        });
+      },
+      function(payment, callback) {
+        // arg1 now equals 'one' and arg2 now equals 'two'
+        Plan.findOne({
+          where: {
+            p_name: payment.type
+          }
+        }, function(err, plan) {
+          if (err) {
+            return callback(err);
+          }
+          if (_.isEmpty(plan)) {
+            return callback({ message: "plan not found" }, null);
+          }
+          plan.payment = payment;
+          callback(null, plan);
+        });
+      },
+      function(plan, callback) {
+        // arg1 now equals 'three'
+        var mon_diff = moment_time().diff(moment_time(plan.payment.created), "months");
+        // console.log('mon_diff',mon_diff);
+        var g_month = moment_time(plan.payment.created).add(mon_diff, 'M');
+        // console.log('g_month',g_month);
+        var l_month = moment_time(g_month).add(1, 'M');
+        // console.log('l_month',l_month);
+        Coupons.count({ m_id: m_id, $and: [{ created: { $gt: new Date(g_month) } }, { created: { $lt: new Date(l_month) } }] }, function(err, count) {
+          if (err) {
+            return callback(err);
+          }
+          if (count > plan.coupons_count) {
+            var data = {
+              plan_coupons_count: plan.coupons_count,
+              coupons_generated: count,
+              can_execute: false
+            };
+          } else {
+            var data = {
+              plan_coupons_count: plan.coupons_count,
+              coupons_generated: count,
+              can_execute: true
+            };
+          }
+          callback(null, data);
+        });
+      }
+    ], function(err, result) {
+      // result now equals 'done' 
+      if (err) {
+        // console.log('err', err);
+        return cb(err);
+      } else {
+        return cb(null, result);
+      }
+    });
+  };
 
 };

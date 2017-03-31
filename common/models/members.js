@@ -9,7 +9,7 @@ module.exports = function(Members) {
     //delete Members.validations.email; //delete MyModel.app.models.User.validations.email;
     delete Members.validations.username; //delete MyModel.app.models.User.validations.username;
   });
-  Members.sign_universal = function(username, email, password,origin,a_code, cb) {
+  Members.sign_universal = function(username, email, password, origin, a_code, cb) {
 
     if (!email || email == '') {
       return cb("invalid request.");
@@ -64,10 +64,10 @@ module.exports = function(Members) {
       }, {
         arg: 'password',
         type: 'string'
-      },{
+      }, {
         arg: 'origin',
         type: 'string'
-      },{
+      }, {
         arg: 'a_code',
         type: 'string'
       }],
@@ -405,6 +405,36 @@ module.exports = function(Members) {
         arg: 'new_password',
         type: 'string'
       }],
+      returns: {
+        arg: 'result',
+        type: 'object'
+      }
+    }
+  );
+
+  Members.get_max_status = function(cb) {
+    var currentUser = Members.app.currentUser;
+
+    if (!currentUser) {
+      return cb("UnAuthorized User");
+    }
+    var Coupons = Members.app.models.Coupons;
+    Coupons.check_max_coupons(currentUser.id, function(err, result) {
+      // result now equals 'done' 
+      if (err) {
+        return cb(err);
+      } else {
+        return cb(null, result);
+      }
+    });
+  };
+
+  Members.remoteMethod(
+    'get_max_status', {
+      http: {
+        path: '/get_max_status',
+        verb: 'get'
+      },
       returns: {
         arg: 'result',
         type: 'object'
